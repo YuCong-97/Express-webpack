@@ -157,35 +157,10 @@ router.post('/getSourceList',function(req,res,next){
 			res.send(rs)
 		})
 	})
-	
-	/* var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	//console.log(data)
-	var rs={
-	  error: false,
-	  errorCode: 0,
-	  sources: data.sources
-	}
-	console.log("getSourceList",rs)
-	res.send(rs); */
 });
 
 //修改source
 router.post('/setSource',function(req,res,next){
-	/* var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	var rs={
-    error: false,
-    errorCode: 0,
-    sources: req.body.sources
-	}
-	data.sources=req.body.sources
-	try {
-	  fs.writeFileSync(DATA_PATH, JSON.stringify(data))
-	  //file written successfully
-	} catch (err) {
-	  console.error(err)
-	}
-	console.log("setSource",rs)
-	res.send(rs); */
 	var sources = req.body.sources
 	console.log(sources)
 	if (!DB_API)
