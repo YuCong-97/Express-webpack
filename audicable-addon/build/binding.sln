@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node-addon-api)", "..\node_modules\node-addon-api", "{AF891C37-E709-9CCC-0D50-0CCCC8CCC563}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node_modules)", "..\node_modules", "{9D350B9E-06FB-960D-859F-B43C9597383A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "audicable", "audicable.vcxproj", "{63E223BD-947D-232C-AE79-AF2C261A5CCE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA} = {0E246AF6-F08D-29EF-5B13-5095DF6B46BA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nothing", "node_modules\node-addon-api\nothing.vcxproj", "{0E246AF6-F08D-29EF-5B13-5095DF6B46BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA}.Debug|Win32.Build.0 = Debug|Win32
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA}.Release|Win32.ActiveCfg = Release|Win32
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA}.Release|Win32.Build.0 = Release|Win32
+		{63E223BD-947D-232C-AE79-AF2C261A5CCE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{63E223BD-947D-232C-AE79-AF2C261A5CCE}.Debug|Win32.Build.0 = Debug|Win32
+		{63E223BD-947D-232C-AE79-AF2C261A5CCE}.Release|Win32.ActiveCfg = Release|Win32
+		{63E223BD-947D-232C-AE79-AF2C261A5CCE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0E246AF6-F08D-29EF-5B13-5095DF6B46BA} = {AF891C37-E709-9CCC-0D50-0CCCC8CCC563}
+		{AF891C37-E709-9CCC-0D50-0CCCC8CCC563} = {9D350B9E-06FB-960D-859F-B43C9597383A}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,9 @@
+{"configShow":false,"custom":false,"name":"Spotify","show":true,"sid":"1","src":"/img/spla_sp@2x.30ba8247.png","thumbnail":"spla_sp@2x.png","url":"https://open.spotify.com/","_id":"P2wYzSnxfEbaz2EO"}
+{"configShow":false,"custom":false,"name":"Apple Music","show":true,"sid":"2","src":"/img/spla_ap@2x.1d1fa00d.png","thumbnail":"spla_ap@2x.png","url":"https://music.apple.com/","_id":"hO8guGjwECXgkX1W"}
+{"configShow":false,"custom":false,"name":"Amazon Music","show":true,"sid":"3","src":"/img/spla_am@2x.670eea76.png","thumbnail":"spla_am@2x.png","url":"https://music.amazon.com/home","_id":"Uu8rtBnfFN7OGmiE"}
+{"configShow":false,"custom":false,"name":"Tidal","show":true,"sid":"4","src":"/img/spla_ti@2x.a71656f8.png","thumbnail":"spla_ti@2x.png","url":"https://listen.tidal.com/","_id":"dHmA1hgN8JDyTCBv"}
+{"configShow":false,"custom":false,"name":"Deezer","show":true,"sid":"5","src":"/img/spla_de@2x.cefdd053.png","thumbnail":"spla_de@2x.png","url":"https://www.deezer.com/","_id":"wW8hy1BA1QvyAPqT"}
+{"configShow":false,"custom":false,"name":"YouTube Music","show":true,"sid":"6","src":"/img/spla_yt@2x.867415f9.png","thumbnail":"spla_yt@2x.png","url":"https://music.youtube.com/","_id":"vHbfBYTO5IFz6fHj"}
+{"configShow":false,"custom":false,"name":"Pandora","show":true,"sid":"7","src":"/img/spla_pd@2x.008a2495.png","thumbnail":"spla_pd@2x.png","url":"https://www.pandora.com/","_id":"yghAeUmDZF5nVLox"}
+{"configShow":false,"custom":false,"name":"Line Music","show":true,"sid":"8","src":"/img/spla_lm@2x.45a7e6fd.png","thumbnail":"spla_lm@2x.png","url":"https://music.line.me/","_id":"A7ZcvtQ4IvEPWVfi"}
+{"__RecordType":"FLAG","isWriteDefaultPlatforms":true,"_id":"0axxrIX2zmcIu3et"}

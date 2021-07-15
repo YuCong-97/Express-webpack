@@ -1,0 +1,41 @@
+{
+  "name": "backend-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "inject.js",
+  "dependencies": {
+    "audicable-addon": "./audicable-addon",
+    "db-apis": "./db-apis",
+    "babel-preset-env": "^1.7.0",
+    "body-parser": "^1.19.0",
+    "cors": "2.8.5",
+    "electron": "12.0.7-wvvmp",
+    "express": "^4.5.0",
+    "express-ws-routes": "^1.1.0",
+    "class-is": "^1.1.0",
+    "nedb": "^1.8.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.6",
+    "babel-loader": "^7.1.5",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "babili-webpack-plugin": "^0.1.2",
+    "class-is": "^1.1.0",
+    "cors": "^2.8.5",
+    "mini-css-extract-plugin": "^0.4.5",
+    "vue-loader": "^15.9.7",
+    "webpack": "4.15.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd ./audicable-addon && npm run install && webpack --progress --colors --devtool source-map",
+    "start": "node ./dist/test.js"
+  },
+  "author": "YC",
+  "license": "ISC"
+}

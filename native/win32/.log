@@ -1,0 +1,66 @@
+2021-06-08 09:12:40.925 INFO [node.exe:14204:3678] ------------------------Initialize------------------------
+2021-06-08 09:12:40.925 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:12:40.925 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:12:40.925 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:12:40.925 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:12:40.925 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:12:40.925 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:12:40.927 INFO [node.exe:14204:3678] [WAS] initialize: 14204
+2021-06-08 09:12:40.930 INFO [node.exe:14204:3678] PrettyLastError: OpenProcess failed, errno:87, '参数错误。
+'
+2021-06-08 09:12:40.930 ERROR [node.exe:14204:3678] ProcessDupData failed
+2021-06-08 09:12:40.930 INFO [node.exe:14204:3678] InjectDll failture
+2021-06-08 09:15:38.954 INFO [node.exe:14204:3678] ------------------------Initialize------------------------
+2021-06-08 09:15:38.954 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:38.954 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:38.954 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:38.954 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:38.954 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:38.954 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:38.954 INFO [node.exe:14204:3678] [WAS] initialize: 14204
+2021-06-08 09:15:38.955 INFO [node.exe:14204:3678] PrettyLastError: OpenProcess failed, errno:87, '参数错误。
+'
+2021-06-08 09:15:38.955 ERROR [node.exe:14204:3678] ProcessDupData failed
+2021-06-08 09:15:38.955 INFO [node.exe:14204:3678] InjectDll failture
+2021-06-08 09:15:38.955 INFO [node.exe:14204:3678] [WAS] uninitialize
+2021-06-08 09:15:39.015 INFO [node.exe:14204:3678] [WAS] uninitialize over
+2021-06-08 09:15:59.058 INFO [node.exe:14204:3678] ------------------------Initialize------------------------
+2021-06-08 09:15:59.059 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:59.059 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:59.059 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] [WAS] initialize: 14204
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] PrettyLastError: OpenProcess failed, errno:87, '参数错误。
+'
+2021-06-08 09:15:59.059 ERROR [node.exe:14204:3678] ProcessDupData failed
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] InjectDll failture
+2021-06-08 09:15:59.059 INFO [node.exe:14204:3678] [WAS] uninitialize
+2021-06-08 09:15:59.109 INFO [node.exe:14204:3678] [WAS] uninitialize over
+2021-06-08 09:16:38.650 INFO [node.exe:14204:3678] ------------------------Initialize------------------------
+2021-06-08 09:16:38.650 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:16:38.650 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:16:38.650 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:16:38.650 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:16:38.650 ERROR [node.exe:14204:3678] FileSystem::CreateDirectory failed, path:, errno:123, '文件名、目录名或卷标语法不正确。
+'
+2021-06-08 09:16:38.650 INFO [node.exe:14204:3678] CreateDirectory '' failed, is_createIntermediate_directories:1
+2021-06-08 09:16:38.650 INFO [node.exe:14204:3678] [WAS] initialize: 14204
+2021-06-08 09:16:38.651 INFO [node.exe:14204:3678] PrettyLastError: OpenProcess failed, errno:87, '参数错误。
+'
+2021-06-08 09:16:38.651 ERROR [node.exe:14204:3678] ProcessDupData failed
+2021-06-08 09:16:38.651 INFO [node.exe:14204:3678] InjectDll failture
+2021-06-08 09:16:38.651 INFO [node.exe:14204:3678] [WAS] uninitialize
+2021-06-08 09:16:38.701 INFO [node.exe:14204:3678] [WAS] uninitialize over
