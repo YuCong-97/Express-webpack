@@ -613,56 +613,6 @@ router.get('/getSoundMessage',function(req,res,next){
    console.log("getSoundMessage",rs)
    res.send(rs)
 });
-/* //录制结束之后调用该接口 该接口返回本次录制的录音信息
-router.post('/addRecord',function(req,res,next){
-	var rs={
-			error:true,
-			errorCode:-8
-		}
-	try{
-		var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-		var record=req.body.record
-		//获取最后一个元素的rid
-		var rid=data.records[data.records.length-1].rid
-		var musicType=''
-		//获取平台名
-		for(let source of data.sources)
-		{
-		   if (source.sid===record.sid){
-			   musicType=source.name
-			   break
-		   }	   
-		}
-		var newRecord={
-			rid: parseInt(rid)+1,
-			title: record.title,
-			src: record.src,
-			artist: record.artist,
-			album: record.album,
-			duration: record.duration,
-			recordingDate:record.recordingDate,
-			genre: '',
-			year: 0,
-			TrackNum: 0,
-			"musicType": musicType,
-			fullPath: record.fullPath
-			}
-		data.records.push(newRecord)
-		rs={
-		error: false,
-		errorCode: 0,
-		record:newRecord
-		}
-		fs.writeFileSync(DATA_PATH, JSON.stringify(data))
-		//file written successfully
-	}
-	catch(e){
-		console.warn('解析错误')
-		console.log('请求数据',record)
-	}
-   console.log("addRecord",rs)
-   res.send(rs)
-}); */
 //录制结束之后调用该接口 该接口返回本次录制的录音信息
 router.post('/addRecord',function(req,res,next){
 	try{
