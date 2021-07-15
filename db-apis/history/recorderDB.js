@@ -41,27 +41,19 @@ class HistoryDB {
     })
   }
 
-  async read (isNeedReload = false) {
+  async read (isNeedReload = false,filterFunc=null) {
     console.log('[DB] read, isNeedReload:', isNeedReload)
-    const isExists = h => {
-      let r = false
-      if (process.env.NODE_ENV === 'development') r = true
-      else {
-        try { r = h && h.path && fse.pathExistsSync(h.path) } catch (e) { r = false }
-      }
-      return r
-    }
 
     let res = []
-    const historyFilter = { __RecordType: { $exists: false } }
+    const historyFilter = { _id: { $exists: true } }
     if (isNeedReload) {
-      res = await this._readDB(historyFilter, isExists)
+      res = await this._readDB(historyFilter,filterFunc)
       this.cachedHistorys = res
     } else {
       if (this.cachedHistorys) {
         res = this.cachedHistorys
       } else {
-        res = await this._readDB(historyFilter, isExists)
+        res = await this._readDB(historyFilter,filterFunc)
         this.cachedHistorys = res
       }
     }

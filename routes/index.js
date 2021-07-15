@@ -7,7 +7,7 @@ const fs = require('fs')
 var process = require('process');
 const path = require('path')
 const DBApi =  require('db-apis')//操作mongodb的api类 
-var DB_API = null//用于数据操作的实例对象
+var APP_INFO = null//app信息形如{appData:"d:\\work",name:"record"}
  
 
 //var audicable = require('../AudiCable addon/lib/audicable')
@@ -137,14 +137,21 @@ router.get('/DeInit',function(req,res,next){
 //获取source列表(首页的所有平台数据)
 router.post('/getSourceList',function(req,res,next){
 	var appInfo=req.body.appInfo
+	APP_INFO=appInfo
 	console.log('appInfo',appInfo)
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("getConvertedList,尝试先post请求getSourceList",rs)
+		res.send(rs);
+	}
 	//var appInfo={"mainApp":"record","appData":"D:\\work\\DB"}
-	DB_API = new DBApi(appInfo)
+	var api = new DBApi(APP_INFO)
 	//将文件数据写入mongodb中
-	DB_API.execute('RPDB.writeDefaultPlatforms').then(r => {
+	api.execute('RPDB.writeDefaultPlatforms').then(r => {
 		console.log('ok, Init successful!')
 		//读取mongodb的数据
-		DB_API.execute('RPDB.read').then(r=>{
+		api.execute('RPDB.read').then(r=>{
 			if(r)
 				var rs={
 				error:false,
@@ -163,13 +170,14 @@ router.post('/getSourceList',function(req,res,next){
 router.post('/setSource',function(req,res,next){
 	var sources = req.body.sources
 	console.log(sources)
-	if (!DB_API)
+	if (APP_INFO==null)
 	{
-		var rs = {error: false,errorCode:-1}
-		console.log("setSource,请先post请求/getSourceList!",rs)
-		res.send(rs)
+		var rs={error:true,errorCode:-1}
+		console.log("setSource,尝试先post请求getSourceList",rs)
+		res.send(rs);
 	}
-	DB_API.execute('RPDB.updateAll', sources).then(r=>{
+	var api = new DBApi(APP_INFO)
+	api.execute('RPDB.updateAll', sources).then(r=>{
 		//r表示删除个数
 		var rs={
 			error:false,
@@ -184,14 +192,22 @@ router.post('/setSource',function(req,res,next){
 });
 //录制配置
 router.get('/getRecordList',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	var rs={
-	  error: false,
-	  errorCode: 0,
-	  records: data.records
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("getRecordList,尝试先post请求getSourceList",rs)
+		res.send(rs);
 	}
-	console.log("getRecordList",rs)
-	res.send(rs);
+	var api=new DBApi(APP_INFO)
+	api.execute("Library.read").then(r=>{
+		var rs={
+			error: false,
+			errorCode: 0,
+			records: r
+		}
+		console.log("getRecordList",rs)
+		res.send(rs);
+	})
 });
 //修改record
 router.post('/setRecord',function(req,res,next){
@@ -265,57 +281,59 @@ router.post('/deleteRecord',function(req,res,next){
 	console.log("deleteRecord",rs)
 	res.send(rs);
 });
-
 //获取record分类
 router.post('/getConvertedList',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
 	var way=req.body.way
-	switch(way)
+	if (APP_INFO==null)
 	{
-		case 'artist':
-			var rs={
-				error: false,
-				errorCode: 0,
-				convertedList: [
-					{
+		var rs={error:true,errorCode:-1}
+		console.log("getConvertedList,尝试先post请求getSourceList",rs)
+		res.send(rs);
+	}
+	var api=new DBApi(APP_INFO)
+	api.execute('Library.read',true).then(r=>{
+		var rs={
+			error: false,
+			errorCode: 0,
+			convertedList:[]
+		}
+		switch (way)
+		{
+			case 'artist':
+				rs.convertedList=[{
 					  cid: 1,
 					  name: 'All Converted',
-					  count: data.records.length
-					}
-				]
-			}	
-			var mem={}
-			for(var i=0;i<data.records.length;++i )
-			{
-				
-				if (data.records[i]['artist'] in mem)
-					mem[data.records[i]['artist']].push(data.records[i])
-				else
-					mem[data.records[i]['artist']]=[data.records[i]]
-			}
-			var index=2
-			RECORDS['artist']=[data.records]
-			for (let m in mem)
-			{
-				var converted={
-					cid:index,
-					name:m,
-					count:mem[m].length
+					  count: r.length
+					}]
+				//记录歌手数据形如 {'张三':3,'李四':4}
+				var mem={}
+				for(var record of r)
+				{
+					var artist=record.artist
+					if(artist in mem)
+						mem[artist]+=1
+					else
+						mem[artist]=1
 				}
-				rs.convertedList.push(converted)
-				RECORDS['artist'].push(mem[m])
-				index+=1
-			}
-			break;
-		case 'time':
-			var rs={
-				error: false,
-				errorCode: 0,
-				convertedList: [
+				console.log('mem',mem)
+				for(var key in mem)
+				{
+					var cid=rs.convertedList.length
+					var name=key
+					var count=mem[key]
+					rs.convertedList.push({
+						cid:cid,
+						name:name,
+						count:count
+					})
+				}
+				break
+			case 'time':
+				rs.convertedList=[
 					{
 					  cid: 1,
 					  name: 'All Time',
-					  count: data.records.length
+					  count: r.length
 					},
 					{
 					  cid: 2,
@@ -340,81 +358,71 @@ router.post('/getConvertedList',function(req,res,next){
 					  count: 0
 					}
 				]
-			}	
-			RECORDS['time']=[data.records,[],[],[],[]]
-			//时间形如 "recordingDate": "2021-10-02 09:23 AM"
-			var nowDate=new Date()
-			for(var i=0;i<data.records.length;++i )
-			{
-				var dateList=data.records[i]['recordingDate'].split(" ")[0].split("-")
-				var year=dateList[0]
-				var month=dateList[1]
-				var day=dateList[2]
-				var recordDate=new Date()
-				recordDate.setFullYear(year,month-1,day);
-				if (nowDate.getTime()/1000-recordDate.getTime()/1000<=60*60*24*7)
+				//当前时间
+				var nowDate=new Date()
+				for(var record of r)
 				{
-					rs.convertedList[1].count+=1
-					RECORDS['time'][1].push(data.records[i])
+					//创建记录的date对象
+					var dateList=record['recordingDate'].split(" ")[0].split("-")//时间形如 "recordingDate": "2021-10-02 09:23"
+					var year=dateList[0]
+					var month=dateList[1]
+					var day=dateList[2]
+					var recordDate=new Date()
+					recordDate.setFullYear(year,month-1,day);
+					if (nowDate.getTime()/1000-recordDate.getTime()/1000<=60*60*24*7)//最近一星期
+					{
+						rs.convertedList[1].count+=1
+					}
+					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>60*60*24*7 && nowDate.getTime()/1000-recordDate.getTime()/1000<=getSecondsOfMonth(year,month))//一星期前,一个月内
+					{
+						rs.convertedList[2].count+=1
+					}
+					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>getSecondsOfMonth(year,month) && nowDate.getTime()/1000-recordDate.getTime()/1000<getSecondsOfYear(year,month)/2)//一个月前,半年内
+					{
+						rs.convertedList[3].count+=1
+					}	
+					else//半年前
+					{
+						rs.convertedList[4].count+=1
+					}	
 				}
-				else if (nowDate.getTime()/1000-recordDate.getTime()/1000>60*60*24*7 && nowDate.getTime()/1000-recordDate.getTime()/1000<=getSecondsOfMonth(year,month))
-				{
-					rs.convertedList[2].count+=1
-					RECORDS['time'][2].push(data.records[i])
-				}
-				else if (nowDate.getTime()/1000-recordDate.getTime()/1000>getSecondsOfMonth(year,month) && nowDate.getTime()/1000-recordDate.getTime()/1000<getSecondsOfYear(year,month)/2)
-				{
-					rs.convertedList[3].count+=1
-					RECORDS['time'][3].push(data.records[i])
-				}	
-				else
-				{
-					rs.convertedList[4].count+=1
-					RECORDS['time'][4].push(data.records[i])
-				}	
-			}
-			break;	
-		case 'source':
-			var rs={
-				error: false,
-				errorCode: 0,
-				convertedList: [
+				break
+			case 'source':
+				rs.convertedList=[
 					{
 						cid:1,
 						name:'All Source',
-						count:data.records.length
+						count:r.length
 					}
-				]
-			}	
-			var mem={}
-			for(var i=0;i<data.records.length;++i )
-			{
-				if (data.records[i]['source'] in mem)
-					mem[data.records[i]['source']].push(data.records[i])
-				else
-					mem[data.records[i]['source']]=[data.records[i]]
-			}
-			RECORDS['source']=[data.records]
-			
-			var index=2
-			for (let m in mem)
-			{
-				var converted={
-					cid:index,
-					name:m,
-					count:mem[m].length
+				]	
+				//记录平台数据形如 {'Tidal':3,'appleMusic':4}
+				var mem={}
+				for(var record of r)
+				{
+					var musicType=record.musicType
+					if(musicType in mem)
+						mem[musicType]+=1
+					else
+						mem[musicType]=1
 				}
-				rs.convertedList.push(converted)
-				RECORDS['source'].push(mem[m])
-				index+=1
-			}
-			break;
-		default:
-			break;
-			
-	}
-	console.log("getConvertedList",rs)
-	res.send(rs);
+				console.log('mem',mem)
+				for(var key in mem)
+				{
+					var cid=rs.convertedList.length
+					var name=key
+					var count=mem[key]
+					rs.convertedList.push({
+						cid:cid,
+						name:name,
+						count:count
+					})
+				}
+				break
+		}
+		console.log("getConvertedList",rs)
+		res.send(rs);
+	})
+	
 });
 //根据分类修改录音列表
 router.post('/setRecordListByConverted',function(req,res,next){
@@ -660,7 +668,7 @@ router.post('/addRecord',function(req,res,next){
 	try{
 		var record=req.body.record
 		console.log(record)
-		var musicType=''
+		var musicType='Unknown'
 		var newRecord={
 				title: record.title,
 				src: record.src,
@@ -681,7 +689,7 @@ router.post('/addRecord',function(req,res,next){
 			}
 		//数据库添加数据
 		console.log(newRecord)
-		DB_API.execute("Library.write",newRecord)
+		api.execute("Library.write",newRecord)
 	}catch(e){
 		var rs={
 			error:true,
