@@ -1,0 +1,24 @@
+{
+	"language": "en",
+	"skipVersion": [
+		"1.2.1"
+	],
+	"logfile": "C:\\Users\\Admin\\AppData\\Roaming\\AudiCable\\Logs",
+	"tempPath": "C:\\Users\\Admin\\AppData\\Local\\Temp\\AudiCable",
+	"outputFormat": "m4a",
+	"conversionMode": "auto",
+	"outputQuality": "128",
+	"covertSpeed": 2,
+	"outputFolder": "C:\\Users\\Admin\\Documents\\WindowsPowerShell",
+	"protocol": "No Proxy",
+	"proxy": "",
+	"port": "",
+	"afterCT": "Do nothing",
+	"appColor": "dark",
+	"formatOutputFolder": "C:\\Users\\Admin\\Documents\\AudiCable\\FormatConverter",
+	"outputOrganized": "Artist/Album",
+	"filenameRule": "{Track Number} {Title}",
+	"renameExistFile": true,
+	"recordedCount": -9996,
+	"showInstallGuide": "12.0.7"
+}

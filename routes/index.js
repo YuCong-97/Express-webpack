@@ -7,8 +7,7 @@ const fs = require('fs')
 var process = require('process');
 const path = require('path')
 const DBApi =  require('db-apis')//操作mongodb的api类 
-var APP_INFO = null//app信息形如{appData:"d:\\work",name:"record"}
- 
+
 
 //var audicable = require('../AudiCable addon/lib/audicable')
 var audicable = require('audicable-addon')
@@ -23,19 +22,18 @@ var Player=0
 var RecordApp=0
 var SpotifyCMDApp=0
 var RecordCMDApp=0
-var CUR_SOURCE='Other'
+var APP_INFO = null//app信息形如{appData:"d:\\work",name:"record"}
+var SOURCES={}
 //储存记录
 var RECORDS={}
 //记录配置
 var RECORDS_CONFIG={}
-//数据路径
-const DATA_PATH=path.join(path.dirname(__dirname),"public/jsons/data.json")
 //当前歌曲信息
 var CUR_MUSIC_INFO={
 	"error":true,
 	"errorCode":-1
 }
-console.log("DATA_PATH",DATA_PATH)
+
 
 
 
@@ -153,11 +151,18 @@ router.post('/getSourceList',function(req,res,next){
 		//读取mongodb的数据
 		api.execute('RPDB.read').then(r=>{
 			if(r)
+			{
 				var rs={
-				error:false,
-				errorCode:0,
-				sources:r
+					error:false,
+					errorCode:0,
+					sources:r
 				}
+				for (var record of r)
+				{
+					SOURCES[record.sid]=record
+				}
+			}
+				
 			else
 				var rs={error:true,errorCode:-1}
 			console.log("getSourceList",rs)
@@ -300,35 +305,41 @@ router.post('/getConvertedList',function(req,res,next){
 		switch (way)
 		{
 			case 'artist':
+				//内存记录信息
+				RECORDS['artist']=[r]
 				rs.convertedList=[{
 					  cid: 1,
 					  name: 'All Converted',
 					  count: r.length
 					}]
-				//记录歌手数据形如 {'张三':3,'李四':4}
+				//记录歌手数据形如 {'张三':['我','你','他'],'李四':['春','秋']}
 				var mem={}
 				for(var record of r)
 				{
 					var artist=record.artist
 					if(artist in mem)
-						mem[artist]+=1
+						mem[artist].push(record)
 					else
-						mem[artist]=1
+						mem[artist]=[record]
 				}
 				console.log('mem',mem)
 				for(var key in mem)
 				{
-					var cid=rs.convertedList.length
+					var cid=rs.convertedList.length+1
 					var name=key
-					var count=mem[key]
+					var count=mem[key].length
+					RECORDS['artist'].push(mem[key])
 					rs.convertedList.push({
 						cid:cid,
 						name:name,
 						count:count
 					})
 				}
+				console.log('RECORDS[\'artist\']',RECORDS['artist'])
 				break
 			case 'time':
+				//内存记录信息
+				RECORDS['time']=[r,[],[],[],[]]
 				rs.convertedList=[
 					{
 					  cid: 1,
@@ -372,22 +383,28 @@ router.post('/getConvertedList',function(req,res,next){
 					if (nowDate.getTime()/1000-recordDate.getTime()/1000<=60*60*24*7)//最近一星期
 					{
 						rs.convertedList[1].count+=1
+						RECORDS['time'][1].push(record)
 					}
 					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>60*60*24*7 && nowDate.getTime()/1000-recordDate.getTime()/1000<=getSecondsOfMonth(year,month))//一星期前,一个月内
 					{
 						rs.convertedList[2].count+=1
+						RECORDS['time'][2].push(record)
 					}
 					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>getSecondsOfMonth(year,month) && nowDate.getTime()/1000-recordDate.getTime()/1000<getSecondsOfYear(year,month)/2)//一个月前,半年内
 					{
 						rs.convertedList[3].count+=1
+						RECORDS['time'][3].push(record)
 					}	
 					else//半年前
 					{
 						rs.convertedList[4].count+=1
+						RECORDS['time'][4].push(record)
 					}	
 				}
 				break
 			case 'source':
+				//内存记录信息
+				RECORDS['source']=[r]
 				rs.convertedList=[
 					{
 						cid:1,
@@ -401,16 +418,17 @@ router.post('/getConvertedList',function(req,res,next){
 				{
 					var musicType=record.musicType
 					if(musicType in mem)
-						mem[musicType]+=1
+						mem[musicType].push(record)
 					else
-						mem[musicType]=1
+						mem[musicType]=[record]
 				}
 				console.log('mem',mem)
 				for(var key in mem)
 				{
-					var cid=rs.convertedList.length
+					var cid=rs.convertedList.length+1
 					var name=key
-					var count=mem[key]
+					var count=mem[key].length
+					RECORDS['source'].push(mem[key])
 					rs.convertedList.push({
 						cid:cid,
 						name:name,
@@ -426,7 +444,7 @@ router.post('/getConvertedList',function(req,res,next){
 });
 //根据分类修改录音列表
 router.post('/setRecordListByConverted',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
+	console.log('RECORDS',RECORDS)
 	var way=req.body.way
 	var cid=req.body.cid
 	var rs= {
@@ -434,48 +452,25 @@ router.post('/setRecordListByConverted',function(req,res,next){
 		errorCode: 0,
 		records: []
 	}
-	switch(way)
-	{
-		case 'artist':
-			rs.records=RECORDS['artist'][cid-1]
-			break;
-		case 'time':
-			rs.records=RECORDS['time'][cid-1]
-			break;	
-		case 'source':
-			rs.records=RECORDS['source'][cid-1]
-			break;
-		default:
-			break;
-			
-	}
+	rs.records=RECORDS[way][cid-1]
 	console.log("setRecordListByConverted",rs)
 	res.send(rs);
 });
-
 
 //打开音乐平台
 router.post('/openSource',function(req,res,next){
 	const {app, BrowserWindow,shell,ipcMain} = require('electron')
 	var sid=req.body.sid
-	var url=null
-	var id=null
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	for(var source of data.sources)
-	{
-		if(source.sid==sid)
-		{
-			url=source.url
-			id=source.name
-		}
-	}
+	console.log(sid,SOURCES)
+	var url=SOURCES[sid].url
+	var id=SOURCES[sid].name
 	console.log(url)
 	ipcRenderer.send('open', {"url":url,"id":id})
 	var rs= {
 	error: false,
 	errorCode: 0,
 	}
-	console.log("openUrl",rs)
+	console.log("openSource",rs)
 	res.send(rs);
 });
 //获取打开的音乐平台的信息
@@ -495,8 +490,6 @@ router.get('/getRecordSource',function(req,res,next){
 	}
 	console.log("getRecordSource",rs)
 	res.send(rs);
-	
-	
 });
 //获取打开的音乐平台的信息
 router.post('/closeSource',function(req,res,next){
@@ -618,6 +611,7 @@ router.post('/addRecord',function(req,res,next){
 	try{
 		var record=req.body.record
 		console.log(record)
+		//var musicType=record.musicType
 		var musicType='Unknown'
 		var newRecord={
 				title: record.title,
@@ -731,13 +725,62 @@ router.post('/setRecordSetting',function(req,res,next){
 	res.send(rs);
 	
 });
-//获取输出设置
+/* //获取输出设置
 router.get('/getOutputSetting',function(req,res,next){
 	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
 	var rs= {
 	  error: false,
 	  errorCode: 0,
 	  outputSetting: data.outputSetting
+	}
+	console.log("getOutputSetting",rs)
+	res.send(rs);
+	
+}); */
+//获取输出设置
+router.get('/getOutputSetting',function(req,res,next){
+	var configPath=path.join(APP_INFO.appData,"config.json")
+	//console.log('configPath',configPath)
+	if (fs.existsSync(configPath))
+	{
+		var data = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+	}
+	else
+	{
+		var data={
+			"adFilter": 30,
+			"autoStop": false,
+			"autoStopAfter": 3600,
+			"config": {
+				"bitRate": 128,
+				"type": "mp3"
+			},
+			"folder": "D:\\tmp",
+			"isTrial": true,
+			"splitSilenceTime": 180,
+			"splitType": "silence",
+			"appInfo":APP_INFO,
+		}
+		fs.writeFileSync(configPath,JSON.stringify(data),'utf-8')
+	}
+	//console.log('data',data)
+	var outputSetting={
+		"opData": {
+			"adFilter": data.adFilter,
+			"autoStop": data.autoStop,
+			"autoStopAfter": data.autoStopAfter,
+			"config": data.config,
+			"folder": data.folder,
+			"isTrial": data.isTrial,
+			"splitSilenceTime": data.splitSilenceTime,
+			"splitType": data.splitType
+		},
+		"opType": "UpdateRecordConfig"
+	}
+	var rs= {
+	  error: false,
+	  errorCode: 0,
+	  outputSetting: outputSetting
 	}
 	console.log("getOutputSetting",rs)
 	res.send(rs);
