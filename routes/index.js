@@ -2,7 +2,7 @@
 { */
 const express=require('express')
 var router=express.Router()
-const {ipcRenderer} = require('electron')
+const {ipcRenderer,remote} = require('electron')
 const fs = require('fs')
 var process = require('process');
 const path = require('path')
@@ -22,7 +22,14 @@ var Player=0
 var RecordApp=0
 var SpotifyCMDApp=0
 var RecordCMDApp=0
-var APP_INFO = null//app信息形如{appData:"d:\\work",name:"record"}
+var APP_INFO = remote.getGlobal('appInfo')//app信息形如{appData:"d:\\work",name:"record"}
+APP_INFO.appData="D:\\work\\DB"
+var PID = remote.getGlobal('pid')
+var CONFIGS = remote.getGlobal('configs')
+console.log('APP_INFO',APP_INFO)
+console.log('PID',PID)
+console.log('CONFIGS',CONFIGS)
+var CONFIG_PATH = path.join(APP_INFO.appData,"config.json")//配置文件路径
 var SOURCES={}
 //储存记录
 var RECORDS={}
@@ -93,11 +100,7 @@ router.websocket('/getSoundMessage',function(info,cb,next){
 		//设置定时器发送数据
 		setInterval(function(){
 			  socket.send(JSON.stringify(CUR_MUSIC_INFO))
-		},900)
-		/* socket.on('message',function (msg){
-			console.log("getSoundMessage",CUR_MUSIC_INFO)
-			socket.send(JSON.stringify(CUR_MUSIC_INFO))
-		}) */
+		},1000)
 	}
 	cb(getSoundMessage)
 });
@@ -108,22 +111,93 @@ router.get('/', function(req, res, next) {
 });
 //初始化模块
 router.post('/Init',function(req,res,next){
-	var opData=new Object(req.body.opData)
-	//const opData ={"appTempPath":"C:\\Users\\Admin\\AppData\\Local\\Temp\\AudiCable","logPath":"C:\\Users\\Admin\\AppData\\Roaming\\AudiCable\\Logs","appName":"AudiCable","appIdentify":"com.audicable.audiorecorder"}
-	var rs=audicable.Initialize(JSON.stringify({opData}))
-	//获取所有的接口
-	AmazonApp=audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'amazon' }))
-	iTunesApp=audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'itunes' }))
-	iTunesLibrary=audicable.QueryInterface('MusicLibrary', JSON.stringify({ appType: 'itunes' }))
-	SpotifyApp= audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'spotify' }))
-	SpotifyLibrary=audicable.QueryInterface('MusicLibrary', JSON.stringify({ appType: 'spotify' }))
-	Tool=audicable.QueryInterface('Tool', '')
-	Player=audicable.QueryInterface('Player', '')
-	RecordApp=audicable.QueryInterface('Record', '')
-	SpotifyCMDApp=audicable.QueryInterface('CDMApp', JSON.stringify({ appType: 'spotify' }))
-	RecordCMDApp=audicable.QueryInterface('CDMApp', JSON.stringify({ appType: 'record' }))
-	console.log("Init",rs)
-	res.send(rs);
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("Init获取appInfo失败",rs)
+		res.send(rs)
+		return 
+	}
+	//对网站列表数据进行初始化
+	var api = new DBApi(APP_INFO)
+	api.execute('RPDB.writeDefaultPlatforms').then(r=>{
+		//生成配置文件config.json
+		var logfile=path.join(APP_INFO.appData, 'Logs')
+		var tempPath=CONFIGS.get('tempPath')
+		var outputFolder=APP_INFO.appDocuments
+		var formatOutputFolder=path.join(APP_INFO.appDocuments,"FormatConverter")
+		var defaultConfig={
+			"language": "en",
+			"skipVersion": [
+				"1.2.1"
+			],
+			"appInfo": APP_INFO,
+			"logfile": logfile,
+			"tempPath": tempPath,
+			"outputFormat": "mp3",
+			"conversionMode": "auto",
+			"outputQuality": 128,
+			"covertSpeed": 2,
+			"outputFolder": "D:\\tmp",
+			"protocol": "No Proxy",
+			"proxy": "",
+			"port": "",
+			"afterCT": "Do nothing",
+			"appColor": "dark",
+			"adFilter": 30,
+			"formatOutputFolder": formatOutputFolder,
+			"outputOrganized": "Artist/Album",
+			"filenameRule": "{Track Number} {Title}",
+			"renameExistFile": true,
+			"recordedCount": -9996,
+			"showInstallGuide": "12.0.7",
+			"autoStop": false,
+			"autoStopAfter": 3600,
+			"isTrial": true,
+			"splitSilenceTime": 180,
+			"splitType": "silence"
+		}
+		console.log('CONFIG_PATH',CONFIG_PATH)
+		console.log('defaultConfig',defaultConfig)
+		if (fs.existsSync(CONFIG_PATH))
+		{
+			var data = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'))
+			data.appInfo = defaultConfig.appInfo
+			data.logfile = defaultConfig.logfile
+			data.tempPath = defaultConfig.tempPath
+			fs.writeFileSync(CONFIG_PATH,JSON.stringify(data), 'utf-8')
+		}
+		else{
+			fs.writeFileSync(CONFIG_PATH,JSON.stringify(defaultConfig), 'utf-8')
+		}
+		//底层audicable音频库初始化
+		//var opData=new Object(req.body.opData)
+		// var appTempPath = configs.get('tempPath')
+		// var logPath = path.join(appInfo.appData, 'Logs')
+		var opData={
+			"appTempPath":CONFIGS.get('tempPath'),
+			"logPath": path.join(APP_INFO.appData, 'Logs'),
+			"appName":APP_INFO.appName,
+			"appIdentify":APP_INFO.appId,
+			"pid":PID}
+		console.log("Init.opData",opData)
+		//const opData ={"appTempPath":"C:\\Users\\Admin\\AppData\\Local\\Temp\\AudiCable","logPath":"C:\\Users\\Admin\\AppData\\Roaming\\AudiCable\\Logs","appName":"AudiCable","appIdentify":"com.audicable.audiorecorder","pid":123}
+		var rs=audicable.Initialize(JSON.stringify({opData}))
+		//获取所有的接口
+		AmazonApp=audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'amazon' }))
+		iTunesApp=audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'itunes' }))
+		iTunesLibrary=audicable.QueryInterface('MusicLibrary', JSON.stringify({ appType: 'itunes' }))
+		SpotifyApp= audicable.QueryInterface('MusicApp', JSON.stringify({ appType: 'spotify' }))
+		SpotifyLibrary=audicable.QueryInterface('MusicLibrary', JSON.stringify({ appType: 'spotify' }))
+		Tool=audicable.QueryInterface('Tool', '')
+		Player=audicable.QueryInterface('Player', '')
+		RecordApp=audicable.QueryInterface('Record', '')
+		SpotifyCMDApp=audicable.QueryInterface('CDMApp', JSON.stringify({ appType: 'spotify' }))
+		RecordCMDApp=audicable.QueryInterface('CDMApp', JSON.stringify({ appType: 'record' }))
+		console.log("Init",rs)
+		res.send(rs);
+	})//将文件数据写入mongodb中
+	
 });
 //析构模块
 router.get('/DeInit',function(req,res,next){
@@ -134,47 +208,33 @@ router.get('/DeInit',function(req,res,next){
 });
 //获取source列表(首页的所有平台数据)
 router.post('/getSourceList',function(req,res,next){
-	var appInfo=req.body.appInfo
-	APP_INFO=appInfo
-	console.log('appInfo',appInfo)
-	if (APP_INFO==null)
-	{
-		var rs={error:true,errorCode:-1}
-		console.log("getConvertedList,尝试先post请求getSourceList",rs)
-		res.send(rs);
-	}
-	//var appInfo={"mainApp":"record","appData":"D:\\work\\DB"}
 	var api = new DBApi(APP_INFO)
-	//将文件数据写入mongodb中
-	api.execute('RPDB.writeDefaultPlatforms').then(r => {
-		console.log('ok, Init successful!')
-		//读取mongodb的数据
-		api.execute('RPDB.read').then(r=>{
-			if(r)
-			{
-				var rs={
-					error:false,
-					errorCode:0,
-					sources:r
-				}
-				for (var record of r)
-				{
-					SOURCES[record.sid]=record
-				}
+	//读取mongodb的数据
+	api.execute('RPDB.read').then(docs=>{
+		console.log('RPDB.read',docs)
+		if(docs)
+		{
+			var rs={
+				error:false,
+				errorCode:0,
+				sources:docs
 			}
-				
-			else
-				var rs={error:true,errorCode:-1}
-			console.log("getSourceList",rs)
-			res.send(rs)
-		})
+			for (var doc of docs)
+			{
+				SOURCES[doc._id]=doc
+			}
+		}	
+		else
+			var rs={error:true,errorCode:-1}
+		console.log("getSourceList",rs)
+		res.send(rs)
 	})
+	
 });
 
 //修改source
 router.post('/setSource',function(req,res,next){
 	var sources = req.body.sources
-	console.log(sources)
 	if (APP_INFO==null)
 	{
 		var rs={error:true,errorCode:-1}
@@ -192,8 +252,7 @@ router.post('/setSource',function(req,res,next){
 		console.log("setSource",rs)
 		res.send(rs)
 
-	})	
-		
+	})		
 });
 //录制配置
 router.get('/getRecordList',function(req,res,next){
@@ -216,75 +275,41 @@ router.get('/getRecordList',function(req,res,next){
 });
 //修改record
 router.post('/setRecord',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	var rs={
-    error: false,
-    errorCode: 0,
-    records: req.body.records
-    }
-	console.log("setRecord",rs)
-	res.send(rs);
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("getRecordList,尝试先post请求getSourceList",rs)
+		res.send(rs);
+	}
+	var api=new DBApi(APP_INFO)
+	var record=req.body.record
+	api.execute('Library.update',{_id:record._id},record).then(r=>{
+		var rs={error:false,errorCode:0}
+		console.log("setRecord",rs)
+		res.send(rs)
+	})
 
 });
 //删除record
 router.post('/deleteRecord',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	var rs={
-    error: false,
-    errorCode: 0,
-    records: [
-      {
-        rid: '2',
-        title: 'Flying life',
-        src: 'default_s@2x.png',
-        artist: 'Flying life',
-        album: 'Flying life',
-        duration: '00:04:14',
-        recordingDate: '2021-10-02 09:23 AM',
-        genre: '',
-        year: 0,
-        TrackNum: 0
-      },
-      {
-        rid: '3',
-        title: 'Large bowl wide noodles',
-        src: 'default_s@2x.png',
-        artist: 'Flying life',
-        album: 'Flying life',
-        duration: '00:03:22',
-        recordingDate: '2021-10-02 09:23 AM',
-        genre: '',
-        year: 0,
-        TrackNum: 0
-      },
-      {
-        rid: '4',
-        title: 'Do you know whether ',
-        src: 'default_s@2x.png',
-        artist: 'Flying life',
-        album: 'Flying life',
-        duration: '00:04:42',
-        recordingDate: '2021-10-02 09:23 AM',
-        genre: '',
-        year: 0,
-        TrackNum: 0
-      },
-      {
-        rid: '5',
-        title: 'No need to guess',
-        src: 'default_s@2x.png',
-        artist: 'Flying life',
-        album: 'Flying life',
-        duration: '00:04:09',
-        recordingDate: '2021-10-02 09:23 AM',
-        genre: '',
-        year: 0,
-        TrackNum: 0
-      }
-     ]
-    }
-	console.log("deleteRecord",rs)
-	res.send(rs);
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("getConvertedList,尝试先post请求getSourceList",rs)
+		res.send(rs)
+	}
+	var api=new DBApi(APP_INFO)
+	var records=req.body.records
+	var _ids=[]
+	for(var record of records)
+	{
+		_ids.push(record._id)
+	}
+	api.execute('Library.remove',{_id:{$in:_ids}}).then(r=>{
+		var rs={error:false,errorCode:0,records:records}
+		console.log("deleteRecord",rs)
+		res.send(rs)
+	})
 });
 //获取record分类
 router.post('/getConvertedList',function(req,res,next){
@@ -322,7 +347,6 @@ router.post('/getConvertedList',function(req,res,next){
 					else
 						mem[artist]=[record]
 				}
-				console.log('mem',mem)
 				for(var key in mem)
 				{
 					var cid=rs.convertedList.length+1
@@ -335,7 +359,6 @@ router.post('/getConvertedList',function(req,res,next){
 						count:count
 					})
 				}
-				console.log('RECORDS[\'artist\']',RECORDS['artist'])
 				break
 			case 'time':
 				//内存记录信息
@@ -371,35 +394,37 @@ router.post('/getConvertedList',function(req,res,next){
 				]
 				//当前时间
 				var nowDate=new Date()
-				for(var record of r)
-				{
-					//创建记录的date对象
-					var dateList=record['recordingDate'].split(" ")[0].split("-")//时间形如 "recordingDate": "2021-10-02 09:23"
-					var year=dateList[0]
-					var month=dateList[1]
-					var day=dateList[2]
-					var recordDate=new Date()
-					recordDate.setFullYear(year,month-1,day);
-					if (nowDate.getTime()/1000-recordDate.getTime()/1000<=60*60*24*7)//最近一星期
+				if (r.length>0){
+					for(var record of r)
 					{
-						rs.convertedList[1].count+=1
-						RECORDS['time'][1].push(record)
+						//创建记录的date对象
+						var dateList=record['recordingDate'].split(" ")[0].split("-")//时间形如 "recordingDate": "2021-10-02 09:23"
+						var year=dateList[0]
+						var month=dateList[1]
+						var day=dateList[2]
+						var recordDate=new Date()
+						recordDate.setFullYear(year,month-1,day);
+						if (nowDate.getTime()/1000-recordDate.getTime()/1000<=60*60*24*7)//最近一星期
+						{
+							rs.convertedList[1].count+=1
+							RECORDS['time'][1].push(record)
+						}
+						else if (nowDate.getTime()/1000-recordDate.getTime()/1000>60*60*24*7 && nowDate.getTime()/1000-recordDate.getTime()/1000<=getSecondsOfMonth(year,month))//一星期前,一个月内
+						{
+							rs.convertedList[2].count+=1
+							RECORDS['time'][2].push(record)
+						}
+						else if (nowDate.getTime()/1000-recordDate.getTime()/1000>getSecondsOfMonth(year,month) && nowDate.getTime()/1000-recordDate.getTime()/1000<getSecondsOfYear(year,month)/2)//一个月前,半年内
+						{
+							rs.convertedList[3].count+=1
+							RECORDS['time'][3].push(record)
+						}	
+						else//半年前
+						{
+							rs.convertedList[4].count+=1
+							RECORDS['time'][4].push(record)
+						}	
 					}
-					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>60*60*24*7 && nowDate.getTime()/1000-recordDate.getTime()/1000<=getSecondsOfMonth(year,month))//一星期前,一个月内
-					{
-						rs.convertedList[2].count+=1
-						RECORDS['time'][2].push(record)
-					}
-					else if (nowDate.getTime()/1000-recordDate.getTime()/1000>getSecondsOfMonth(year,month) && nowDate.getTime()/1000-recordDate.getTime()/1000<getSecondsOfYear(year,month)/2)//一个月前,半年内
-					{
-						rs.convertedList[3].count+=1
-						RECORDS['time'][3].push(record)
-					}	
-					else//半年前
-					{
-						rs.convertedList[4].count+=1
-						RECORDS['time'][4].push(record)
-					}	
 				}
 				break
 			case 'source':
@@ -422,7 +447,6 @@ router.post('/getConvertedList',function(req,res,next){
 					else
 						mem[musicType]=[record]
 				}
-				console.log('mem',mem)
 				for(var key in mem)
 				{
 					var cid=rs.convertedList.length+1
@@ -444,7 +468,6 @@ router.post('/getConvertedList',function(req,res,next){
 });
 //根据分类修改录音列表
 router.post('/setRecordListByConverted',function(req,res,next){
-	console.log('RECORDS',RECORDS)
 	var way=req.body.way
 	var cid=req.body.cid
 	var rs= {
@@ -460,11 +483,10 @@ router.post('/setRecordListByConverted',function(req,res,next){
 //打开音乐平台
 router.post('/openSource',function(req,res,next){
 	const {app, BrowserWindow,shell,ipcMain} = require('electron')
-	var sid=req.body.sid
-	console.log(sid,SOURCES)
-	var url=SOURCES[sid].url
-	var id=SOURCES[sid].name
-	console.log(url)
+	var _id=req.body._id
+	console.log(_id,SOURCES)
+	var url=SOURCES[_id].url
+	var id=SOURCES[_id].name
 	ipcRenderer.send('open', {"url":url,"id":id})
 	var rs= {
 	error: false,
@@ -479,7 +501,7 @@ router.get('/getRecordSource',function(req,res,next){
 	  error: false,
 	  errorCode: 0,
 	  source: {
-		sid: 1,
+		_id: 1,
 		name: 'Spotify',
 		src: 'spla_sp@2x.png',
 		show: false,
@@ -491,7 +513,7 @@ router.get('/getRecordSource',function(req,res,next){
 	console.log("getRecordSource",rs)
 	res.send(rs);
 });
-//获取打开的音乐平台的信息
+//关闭音乐平台
 router.post('/closeSource',function(req,res,next){
 	var rs= {
 		error: false,
@@ -547,7 +569,7 @@ router.post('/sendWebviewMetaData',function(req,res,next){
 			  'src': target.thumbnail,
 			  'artist': target.artist,
 			  'album': target.album,
-			  'sid':0
+			  '_id':0
 			}
 		   }
 	   }  
@@ -571,14 +593,12 @@ router.post('/sendWebviewMetaData',function(req,res,next){
 //返回当前录音歌曲的数据
 router.get('/getSoundMessage',function(req,res,next){
 	var tmp=audicable.GetCurMusicResult()
-    //console.log(tmp,typeof(tmp))
     try{
 	   tmp=JSON.parse(tmp)
 	   var recordingDate=getDateStr(tmp.progress.recordId)//将记录id转化为日期字符
 	   var error=tmp.error
 	   if (!error)
 	   {
-		   //console.log('RECORDS_CONFIG',RECORDS_CONFIG)
 		   var fullPath=path.join(RECORDS_CONFIG.folder,tmp.progress.recordId)+'.'+RECORDS_CONFIG.config.type
 		   var rs={
 			error: tmp.error,
@@ -608,39 +628,37 @@ router.get('/getSoundMessage',function(req,res,next){
 });
 //录制结束之后调用该接口 该接口返回本次录制的录音信息
 router.post('/addRecord',function(req,res,next){
-	try{
-		var record=req.body.record
-		console.log(record)
-		//var musicType=record.musicType
-		var musicType='Unknown'
-		var newRecord={
-				title: record.title,
-				src: record.src,
-				artist: record.artist,
-				album: record.album,
-				duration: record.duration,
-				recordingDate:record.recordingDate,
-				genre: '',
-				year: 0,
-				TrackNum: 0,
-				"musicType": musicType,
-				fullPath: record.fullPath
-			}
-		var rs={
-				error:false,
-				errorCode:0,
-				record:newRecord
-			}
-		//数据库添加数据
-		console.log(newRecord)
-		api.execute("Library.write",newRecord)
-	}catch(e){
-		var rs={
-			error:true,
-			errorCode:-1,
-		}
-		console.log('请尝试先post请求/getSourceList！')
+	if (APP_INFO==null)
+	{
+		var rs={error:true,errorCode:-1}
+		console.log("getConvertedList,尝试先post请求getSourceList",rs)
+		res.send(rs);
 	}
+	var api = new DBApi(APP_INFO)
+	var record=req.body.record
+	console.log(record)
+	//var musicType=record.musicType
+	var musicType='Unknown'
+	var newRecord={
+			title: record.title,
+			src: record.src,
+			artist: record.artist,
+			album: record.album,
+			duration: record.duration,
+			recordingDate:record.recordingDate,
+			genre: '',
+			year: 0,
+			TrackNum: 0,
+			"musicType": musicType,
+			fullPath: record.fullPath
+		}
+	var rs={
+			error:false,
+			errorCode:0,
+			record:newRecord
+		}
+	//数据库添加数据
+	api.execute("Library.write",newRecord)
     console.log("addRecord",rs)
     res.send(rs)
 });
@@ -725,96 +743,116 @@ router.post('/setRecordSetting',function(req,res,next){
 	res.send(rs);
 	
 });
-/* //获取输出设置
-router.get('/getOutputSetting',function(req,res,next){
-	var data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf-8'))
-	var rs= {
-	  error: false,
-	  errorCode: 0,
-	  outputSetting: data.outputSetting
-	}
-	console.log("getOutputSetting",rs)
-	res.send(rs);
-	
-}); */
 //获取输出设置
 router.get('/getOutputSetting',function(req,res,next){
-	var configPath=path.join(APP_INFO.appData,"config.json")
-	//console.log('configPath',configPath)
-	if (fs.existsSync(configPath))
+	if (fs.existsSync(CONFIG_PATH))
 	{
-		var data = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+		var data = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'))
+		console.log('getOutputSetting获取配置数据',data)
+		var bitRate=parseInt(data.outputQuality)
+		var type=data.outputFormat
+		var folder=data.outputFolder
+		var isTrial=data.isTrial
+		var splitType=data.splitType
+		var splitSilenceTime=data.splitSilenceTime
+		var adFilter=data.adFilter
+		var autoStop=data.autoStop
+		var autoStopAfter=data.autoStopAfter
+		var outputSetting={
+			"opType": "UpdateRecordConfig",
+			"opData": {
+				"config": {
+					"bitRate": bitRate,
+					"type": type,
+				},
+				"folder": folder,
+				"isTrial": isTrial,
+				"splitType": splitType,
+				"splitSilenceTime": splitSilenceTime,
+				"adFilter": adFilter,
+				"autoStop": autoStop,
+				"autoStopAfter": autoStopAfter,
+			}
+		}
+		var rs= {
+		  error: false,
+		  errorCode: 0,
+		  outputSetting: outputSetting
+		}
+		console.log("getOutputSetting",rs)
+		res.send(rs);
 	}
 	else
 	{
-		var data={
-			"adFilter": 30,
-			"autoStop": false,
-			"autoStopAfter": 3600,
-			"config": {
-				"bitRate": 128,
-				"type": "mp3"
-			},
-			"folder": "D:\\tmp",
-			"isTrial": true,
-			"splitSilenceTime": 180,
-			"splitType": "silence",
-			"appInfo":APP_INFO,
-		}
-		fs.writeFileSync(configPath,JSON.stringify(data),'utf-8')
+		var rs= {error: true,errorCode: -1}
+		res.send(rs)
 	}
-	//console.log('data',data)
-	var outputSetting={
-		"opData": {
-			"adFilter": data.adFilter,
-			"autoStop": data.autoStop,
-			"autoStopAfter": data.autoStopAfter,
-			"config": data.config,
-			"folder": data.folder,
-			"isTrial": data.isTrial,
-			"splitSilenceTime": data.splitSilenceTime,
-			"splitType": data.splitType
-		},
-		"opType": "UpdateRecordConfig"
-	}
-	var rs= {
-	  error: false,
-	  errorCode: 0,
-	  outputSetting: outputSetting
-	}
-	console.log("getOutputSetting",rs)
-	res.send(rs);
+	
 	
 });
 //修改输出设置
 router.post('/setOutputSetting',function(req,res,next){
-	/* var rs= {
-	error: false,
-	errorCode: 0,
-	}
-	res.send(rs); */
-	var jsonCMD=new Object(req.body.setting)
-	/* const jsonCMD =
+	if (fs.existsSync(CONFIG_PATH))
 	{
-		"opType": "UpdateRecordConfig",
-		"opData": {
-			"config": {
-				"bitRate": 128,
-				"type": "mp3"
-			},
-			"folder": "D:\\tmp",
-			"isTrial": true,
-			"splitType": "silence",
-			"splitSilenceTime": 180,
-			"adFilter": 30,
-			"autoStop": false,
-			"autoStopAfter": 3600
-		}
-	} */
-	RECORDS_CONFIG=jsonCMD.opData
-	var rs=audicable.Execute(RecordApp,JSON.stringify( jsonCMD ))
-	console.log("setOutputSetting",JSON.parse(rs.Result))
-	res.send(JSON.parse(rs.Result));
-});
+		var jsonCMD=req.body.setting//形如/getOutputSetting的outputSetting
+		console.log(jsonCMD)
+		RECORDS_CONFIG=jsonCMD.opData
+		var data = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'))
+		data.adFilter=RECORDS_CONFIG.adFilter
+		data.autoStop=RECORDS_CONFIG.autoStop
+		data.autoStopAfter=RECORDS_CONFIG.autoStopAfter
+		data.outputQuality=RECORDS_CONFIG.config.bitRate
+		data.outputFormat=RECORDS_CONFIG.config.type
+		data.outputFolder=RECORDS_CONFIG.folder
+		data.isTrial=RECORDS_CONFIG.isTrial
+		data.splitSilenceTime=RECORDS_CONFIG.splitSilenceTime
+		data.splitType=RECORDS_CONFIG.splitType
+		console.log('setOutputSetting配置数据',data)
+		fs.writeFileSync(CONFIG_PATH,JSON.stringify(data),'utf-8')
+		var rs=audicable.Execute(RecordApp,JSON.stringify( jsonCMD ))
+		console.log("setOutputSetting",JSON.parse(rs.Result))
+		res.send(JSON.parse(rs.Result));
+	}
+	else
+	{
+		var rs= {error: true,errorCode: -1}
+		res.send(rs)
+	}	
 
+	/* var setting=req.body.setting
+	console.log('setting',setting,'setting类型',typeof(setting))
+	var jsonCMD ={
+	"opType":"UpdateRecordConfig",
+	"opData":{"config": {"bitRate": 128,"type":"mp3",},"folder": "D:\\tmp","isTrial":true,"splitType": "silence","splitSilenceTime": 180, "adFilter": 30,"autoStop": false,"autoStopAfter": 3600,}
+	}
+	console.log('jsonCMD',jsonCMD,'jsonCMD类型',typeof(jsonCMD))
+	RECORDS_CONFIG=jsonCMD.opData
+	console.log('setting转字符串',JSON.stringify(setting))
+	console.log('jsonCMD转字符串',JSON.stringify(jsonCMD))
+
+	var rs=audicable.Execute(RecordApp,JSON.stringify( setting ))
+	console.log("setOutputSetting",JSON.parse(rs.Result))
+	res.send(JSON.parse(rs.Result)); */
+});
+//最小化窗口
+router.post('/window-min',function(req,res,next){
+	ipcRenderer.send('window-min')
+	var rs= {error: false,errorCode: 0}
+	console.log("window-min",rs)
+	res.send()
+})
+//最大化窗口
+router.post('/window-max',function(req,res,next){
+	ipcRenderer.send('window-max')
+	var rs= {error: false,errorCode: 0}
+	console.log("window-max",rs)
+	res.send()
+})
+//关闭窗口
+router.post('/window-close',function(req,res,next){
+	ipcRenderer.send('window-close')
+	var rs= {error: false,errorCode: 0}
+	console.log("window-close",rs)
+	res.send()
+})
 module.exports = router;
